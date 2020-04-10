@@ -46,7 +46,7 @@ package Distillation
     parameter data.Benzene benz;
     parameter data.Toluene tol;
     parameter Simulator.Files.ChemsepDatabase.GeneralProperties C[Nc] = {benz, tol};
-    Simulator.Examples.Distillation.DistColumn distCol(Nc = Nc, C = C, Nt = 4, Ni = 1, InT_s = {3}, Ctype = "Partial") annotation(
+    Simulator.Examples.Distillation.DistColumn distCol(Nc = Nc, C = C, Nt = 4, Ni = 1, InT_s = {3}, Ctype = "Total") annotation(
       Placement(visible = true, transformation(origin = {-22, 8}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     Simulator.Examples.Distillation.ms feed(Nc = Nc, C = C) annotation(
       Placement(visible = true, transformation(origin = {-76, 2}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
@@ -167,12 +167,13 @@ package Distillation
 
   model Test4
     extends Modelica.Icons.Example;
-    parameter Integer Nc = 2;
+    parameter Integer Nc = 3;
     import data = Simulator.Files.ChemsepDatabase;
     parameter data.Benzene benz;
     parameter data.Toluene tol;
-    parameter Simulator.Files.ChemsepDatabase.GeneralProperties C[Nc] = {benz, tol};
-    DistColumn distCol(Nc = Nc, C = C, Nt = 22, Ni = 1, InT_s = {10}, condenser.Ctype = "Partial") annotation(
+    parameter data.Methane m;
+    parameter Simulator.Files.ChemsepDatabase.GeneralProperties C[Nc] = {benz, tol, m};
+    DistColumn distCol(Nc = Nc, C = C, Nt = 4, Ni = 1, InT_s = {2}, condenser.Ctype = "Total") annotation(
       Placement(visible = true, transformation(origin = {-3, 3}, extent = {{-25, -25}, {25, 25}}, rotation = 0)));
     Simulator.Examples.Distillation.ms feed(Nc = Nc, C = C) annotation(
       Placement(visible = true, transformation(origin = {-76, 2}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
@@ -185,52 +186,6 @@ package Distillation
     Simulator.Streams.EnergyStream reb_duty annotation(
       Placement(visible = true, transformation(origin = {48, -52}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   equation
-    connect(distCol.Cduty, cond_duty.In) annotation(
-      Line(points = {{12, 28}, {12, 28}, {12, 62}, {28, 62}, {28, 62}}));
-    connect(distCol.Rduty, reb_duty.In) annotation(
-      Line(points = {{16, -22}, {16, -22}, {16, -52}, {38, -52}, {38, -52}}));
-    connect(distCol.Bot, bottoms.In) annotation(
-      Line(points = {{22, -14}, {56, -14}, {56, -16}, {58, -16}}));
-    connect(distCol.Dist, distillate.In) annotation(
-      Line(points = {{22, 22}, {54, 22}, {54, 22}, {54, 22}}));
-    connect(feed.Out, distCol.In_s[1]) annotation(
-      Line(points = {{-66, 2}, {-30, 2}, {-30, 2}, {-28, 2}}));
-    feed.P = 101325;
-    feed.T = 298.15;
-    feed.F_p[1] = 96.8;
-    feed.x_pc[1, :] = {0.3, 0.7};
-    distCol.condenser.P = 151325;
-    distCol.reboiler.P = 101325;
-    distCol.RR = 1.5;
-    bottoms.F_p[1] = 70;
-  annotation(
-      Documentation(info = "<html><head></head><body><!--StartFragment--><span style=\"font-size: 12px;\">This is an executable model to simualate the Distillation Column example where all the components are defined, material stream &amp; column specifications are declared, model instances are connected.</span><div><span style=\"font-size: 12px;\"><br></span></div><div><div style=\"font-size: 12px;\"><b>Material Stream Information</b></div><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><b>Molar Flow Rate:</b>&nbsp;96.8 mol/s</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Benzene):</b>&nbsp;0.3</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Toluene):</b>&nbsp;0.7</div><div style=\"font-size: 12px;\"><b>Pressure:</b>&nbsp;101325 Pa</div><div style=\"font-size: 12px;\"><b>Temperature:</b>&nbsp;298.15 K</div><div style=\"font-size: 12px;\"><br></div><span style=\"font-size: 12px;\"><b>Column Specification: </b>No of stages: 22</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space: pre;\">				</span>&nbsp; Feed Stage Location: 10</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Condenser Type: Partial</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Reflux Ratio: 1.5</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Bottoms Flow Rate: 70 mol/s</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Condenser Pressure: 151325 Pa</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Reboiler Pressure: 101325 Pa</span></div><!--EndFragment--></body></html>"));
-      end Test4;
-
-  model multiFeedTest
-    extends Modelica.Icons.Example;
-    parameter Integer Nc = 2;
-    import data = Simulator.Files.ChemsepDatabase;
-    parameter data.Benzene benz;
-    parameter data.Toluene tol;
-    parameter Simulator.Files.ChemsepDatabase.GeneralProperties C[Nc] = {benz, tol};
-    Simulator.Examples.Distillation.DistColumn distCol(Nc = Nc, C = C, Nt = 5, Ni = 2, InT_s = {3, 4}) annotation(
-      Placement(visible = true, transformation(origin = {-3, 3}, extent = {{-25, -25}, {25, 25}}, rotation = 0)));
-    Simulator.Examples.Distillation.ms feed(Nc = Nc, C = C) annotation(
-      Placement(visible = true, transformation(origin = {-76, 2}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-    Simulator.Examples.Distillation.ms distillate(Nc = Nc, C = C) annotation(
-      Placement(visible = true, transformation(origin = {64, 22}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-    Simulator.Examples.Distillation.ms bottoms(Nc = Nc, C = C) annotation(
-      Placement(visible = true, transformation(origin = {68, -16}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-    Simulator.Streams.EnergyStream cond_duty annotation(
-      Placement(visible = true, transformation(origin = {38, 62}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-    Simulator.Streams.EnergyStream reb_duty annotation(
-      Placement(visible = true, transformation(origin = {48, -52}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-    Simulator.Examples.Distillation.ms ms1(Nc = Nc, C = C) annotation(
-      Placement(visible = true, transformation(origin = {-80, 50}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-  equation
-    connect(ms1.Out, distCol.In_s[2]) annotation(
-      Line(points = {{-70, 50}, {-26, 50}, {-26, 2}, {-28, 2}}));
     connect(distCol.Cduty, cond_duty.In) annotation(
       Line(points = {{12, 28}, {12, 28}, {12, 62}, {28, 62}, {28, 62}}));
     connect(distCol.Rduty, reb_duty.In) annotation(
@@ -244,18 +199,120 @@ package Distillation
     feed.P = 101325;
     feed.T = 298.15;
     feed.F_p[1] = 100;
-    feed.x_pc[1, :] = {0.5, 0.5};
+    feed.x_pc[1, :] = {0.5, 0.5, 0};
     distCol.condenser.P = 101325;
     distCol.reboiler.P = 101325;
     distCol.RR = 2;
     bottoms.F_p[1] = 50;
-    ms1.P = 101325;
-    ms1.T = 298.15;
-    ms1.F_p[1] = 100;
-    ms1.x_pc[1, :] = {0.5, 0.5};
   annotation(
-      Documentation(info = "<html><head></head><body><!--StartFragment--><span style=\"font-size: 12px;\">This is an executable model to simualate the Distillation Column example where all the components are defined, material stream &amp; column specifications are declared, model instances are connected.</span><div><span style=\"font-size: 12px;\"><br></span></div><div><div style=\"font-size: 12px;\"><b>Material Stream Information</b></div><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><b>Feed Stream 1</b></div><div style=\"font-size: 12px;\"><b>Molar Flow Rate:</b>&nbsp;100 mol/s</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Benzene):</b>&nbsp;0.5</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Toluene):</b>&nbsp;0.5</div><div style=\"font-size: 12px;\"><b>Pressure:</b>&nbsp;101325 Pa</div><div style=\"font-size: 12px;\"><b>Temperature:</b>&nbsp;298.15 K</div><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><div><b>Feed Stream 2</b></div><div><b>Molar Flow Rate:</b>&nbsp;100 mol/s</div><div><b>Mole Fraction (Benzene):</b>&nbsp;0.5</div><div><b>Mole Fraction (Toluene):</b>&nbsp;0.5</div><div><b>Pressure:</b>&nbsp;101325 Pa</div><div><b>Temperature:</b>&nbsp;298.15 K</div></div><div style=\"font-size: 12px;\"><br></div><span style=\"font-size: 12px;\"><b>Column Specification: </b>No of stages: 5</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space: pre;\">				</span>&nbsp; Feed Stage Location: 3,4</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Condenser Type: Total</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Reflux Ratio: 2</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Bottoms Flow Rate: 50 mol/s</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Condenser Pressure: 101325 Pa</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Reboiler Pressure: 101325 Pa</span></div><!--EndFragment--></body></html>"));
-      end multiFeedTest;
+      Documentation(info = "<html><head></head><body><!--StartFragment--><span style=\"font-size: 12px;\">This is an executable model to simualate the Distillation Column example where all the components are defined, material stream &amp; column specifications are declared, model instances are connected.</span><div><span style=\"font-size: 12px;\"><br></span></div><div><div style=\"font-size: 12px;\"><b>Material Stream Information</b></div><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><b>Molar Flow Rate:</b>&nbsp;96.8 mol/s</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Benzene):</b>&nbsp;0.3</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Toluene):</b>&nbsp;0.7</div><div style=\"font-size: 12px;\"><b>Pressure:</b>&nbsp;101325 Pa</div><div style=\"font-size: 12px;\"><b>Temperature:</b>&nbsp;298.15 K</div><div style=\"font-size: 12px;\"><br></div><span style=\"font-size: 12px;\"><b>Column Specification: </b>No of stages: 22</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space: pre;\">				</span>&nbsp; Feed Stage Location: 10</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Condenser Type: Partial</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Reflux Ratio: 1.5</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Bottoms Flow Rate: 70 mol/s</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Condenser Pressure: 151325 Pa</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Reboiler Pressure: 101325 Pa</span></div><!--EndFragment--></body></html>"));
+      end Test4;
+
+  model Guess
+  
+  parameter Real R = 8.314;
+  parameter Real B1 = 50;
+  parameter Real RR = 2;
+  parameter Real F = 100;
+  parameter Real Z1[Nc] = {0.5, 0.4, 0.1};
+  
+  parameter Real T_N[2](each fixed = false), P_N(fixed = false), k1[Nc](fixed = false), k2[Nc](fixed = false);
+  parameter Real Ps1[Nc](each fixed = false), Ps2[Nc](each fixed = false), Pbt[Nc](each fixed = false),Pdt[Nc](each fixed = false);
+   
+  parameter  Real Xd[Nc](each fixed = false), Xb[Nc](each fixed = false), y[2,Nc](fixed = false),x[2,Nc](each fixed = false), L1[2](start = 100,fixed = false), V1[2](each start = 150,fixed = false), V_O(fixed = false),L_O(fixed = false),D1(fixed = false);
+  
+  parameter Real Tbt(start = 300, fixed = false), Tdt(start = 300, fixed = false);
+  
+  initial equation
+  
+  P_N = 101325;
+  
+  
+  for i in 1:Nc loop
+  Ps1[i] = Simulator.Files.ThermodynamicFunctions.Psat(C[i].VP, T_N[1]);
+  Ps2[i] = Simulator.Files.ThermodynamicFunctions.Psat(C[i].VP, T_N[2]);
+  Pbt[i] = Simulator.Files.ThermodynamicFunctions.Psat(C[i].VP, Tbt);
+  Pdt[i] = Simulator.Files.ThermodynamicFunctions.Psat(C[i].VP, Tdt);
+  end for;
+  
+  sum(P_N * Z1[:] ./ Pdt[:]) = 1;
+  sum(Pbt[:] ./ P_N .* Z1[:]) = 1;
+  T_N[1] = (Tdt + T_N[2]) / 2;
+  T_N[2] = (T_N[1] + Tbt) / 2;
+  
+  //=======================
+  //Thermodynamics
+  k1[:] = Ps1[:] ./ P_N;
+  k2 = Ps2 ./ P_N;
+  y[1,:] = k1[:] .* x[1,:];
+  y[2, :] = k2 .* x[2, :];
+  sum(y[1, :]) = 1;
+  sum(y[2, :]) = 1;
+  sum(x[1, :]) = 1;
+  sum(x[2, :]) = 1;
+  
+  //=======================
+  //Condenser and Reboiler equation
+  
+  y[2,:] = Xd[:] ;
+  y[1,:] = Xb[:];
+  
+  V1[2] = L_O + D1;
+  L1[1] = V_O + B1;
+  RR = L_O / D1 ;
+  
+  //EQN for the Nth Tray
+  L_O .*Xd + V1[1] .*y[1,:] = V1[2].*y[2, :] + L1[2].*x[2,:];
+  //EQN for the 1st Tray
+  F.*Z1 + L1[2].*x[2, :] + V_O .*Xb = V1[1] .*y[1, :] + L1[1].*x[1, :];
+  
+  
+  
+  end Guess;
+
+  model test5
+    extends Modelica.Icons.Example;
+    parameter Integer Nc = 3;
+    import data = Simulator.Files.ChemsepDatabase;
+    parameter data.Benzene benz;
+    parameter data.Toluene tol;
+    parameter data.Methane m;
+    parameter Simulator.Files.ChemsepDatabase.GeneralProperties C[Nc] = {benz, tol, m};
+    DistColumn distCol(Nc = Nc, C = C, Nt = 4, Ni = 1, InT_s = {2}, condenser.Ctype = "Total") annotation(
+      Placement(visible = true, transformation(origin = {-3, 3}, extent = {{-25, -25}, {25, 25}}, rotation = 0)));
+    Simulator.Examples.Distillation.ms feed(Nc = Nc, C = C) annotation(
+      Placement(visible = true, transformation(origin = {-76, 2}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+    Simulator.Examples.Distillation.ms distillate(Nc = Nc, C = C) annotation(
+      Placement(visible = true, transformation(origin = {64, 22}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+    Simulator.Examples.Distillation.ms bottoms(Nc = Nc, C = C) annotation(
+      Placement(visible = true, transformation(origin = {68, -16}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+    Simulator.Streams.EnergyStream cond_duty annotation(
+      Placement(visible = true, transformation(origin = {38, 62}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+    Simulator.Streams.EnergyStream reb_duty annotation(
+      Placement(visible = true, transformation(origin = {48, -52}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+  equation
+    connect(distCol.Cduty, cond_duty.In) annotation(
+      Line(points = {{12, 28}, {12, 28}, {12, 62}, {28, 62}, {28, 62}}));
+    connect(distCol.Rduty, reb_duty.In) annotation(
+      Line(points = {{16, -22}, {16, -22}, {16, -52}, {38, -52}, {38, -52}}));
+    connect(distCol.Bot, bottoms.In) annotation(
+      Line(points = {{22, -14}, {56, -14}, {56, -16}, {58, -16}}));
+    connect(distCol.Dist, distillate.In) annotation(
+      Line(points = {{22, 22}, {54, 22}, {54, 22}, {54, 22}}));
+    connect(feed.Out, distCol.In_s[1]) annotation(
+      Line(points = {{-66, 2}, {-30, 2}, {-30, 2}, {-28, 2}}));
+    feed.P = 101325;
+    feed.T = 300;
+    feed.F_p[1] = 100;
+    feed.x_pc[1, :] = {0.5, 0.4, 0.1};
+    distCol.condenser.P = 101325;
+    distCol.reboiler.P = 101325;
+    distCol.RR = 2;
+    bottoms.F_p[1] = 50;
+  annotation(
+      Documentation(info = "<html><head></head><body><!--StartFragment--><span style=\"font-size: 12px;\">This is an executable model to simualate the Distillation Column example where all the components are defined, material stream &amp; column specifications are declared, model instances are connected.</span><div><span style=\"font-size: 12px;\"><br></span></div><div><div style=\"font-size: 12px;\"><b>Material Stream Information</b></div><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><b>Molar Flow Rate:</b>&nbsp;96.8 mol/s</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Benzene):</b>&nbsp;0.3</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Toluene):</b>&nbsp;0.7</div><div style=\"font-size: 12px;\"><b>Pressure:</b>&nbsp;101325 Pa</div><div style=\"font-size: 12px;\"><b>Temperature:</b>&nbsp;298.15 K</div><div style=\"font-size: 12px;\"><br></div><span style=\"font-size: 12px;\"><b>Column Specification: </b>No of stages: 22</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space: pre;\">				</span>&nbsp; Feed Stage Location: 10</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Condenser Type: Partial</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Reflux Ratio: 1.5</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Bottoms Flow Rate: 70 mol/s</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Condenser Pressure: 151325 Pa</span></div><div><span style=\"font-size: 12px;\"><span class=\"Apple-tab-span\" style=\"white-space:pre\">				</span>&nbsp; Reboiler Pressure: 101325 Pa</span></div><!--EndFragment--></body></html>"));
+
+  end test5;
   annotation(
     Documentation(info = "<html><head></head><body><div style=\"font-size: 12px;\">Following five problem statement are simulated in this Distillation Column example:</div><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><b><u>Problem Statement 1:</u></b></div><div style=\"font-size: 12px;\"><b><br></b></div><b style=\"font-size: 12px;\">Component System:</b><span style=\"font-size: 12px;\">&nbsp;Benzene, Toluene</span><div><b style=\"font-size: 12px;\">Thermodynamics:</b><span style=\"font-size: 12px;\">&nbsp;Raoult's Law</span><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><b><u>Material Stream Information</u></b></div><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><div style=\"font-size: medium;\"><div style=\"font-size: 12px;\"><b>Molar Flow Rate:</b>&nbsp;100 mol/s</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Benzene):</b>&nbsp;0.5</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Toluene):</b>&nbsp;0.5</div><div style=\"font-size: 12px;\"><b>Pressure:</b>&nbsp;101325 Pa</div><div style=\"font-size: 12px;\"><b>Temperature:</b>&nbsp;298.15 K</div></div></div><div style=\"font-size: 12px;\"><br></div><span style=\"font-size: 12px;\">Simulate a distillation column with 4 stages (excluding condenser and reboiler) where the feed is entering the 3rd stage. The column is operated at uniform pressure of 101325 Pa and with a partial condenser. The column is specified to have reflux ratio of 2 and bottoms flow rate of 50 mol/s.</span><div><br></div><div><br></div><div><div style=\"font-size: 12px;\"><div><b><u>Problem Statement 2:</u></b></div><div><b><br></b></div><b>Component System:</b>&nbsp;Benzene, Toluene<div style=\"font-size: medium;\"><b style=\"font-size: 12px;\">Thermodynamics:</b><span style=\"font-size: 12px;\">&nbsp;Raoult's Law</span><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><b><u>Material Stream Information</u></b></div><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><div style=\"font-size: medium;\"><div style=\"font-size: 12px;\"><b>Molar Flow Rate:</b>&nbsp;100 mol/s</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Benzene):</b>&nbsp;0.5</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Toluene):</b>&nbsp;0.5</div><div style=\"font-size: 12px;\"><b>Pressure:</b>&nbsp;101325 Pa</div><div style=\"font-size: 12px;\"><b>Temperature:</b>&nbsp;298.15 K</div></div></div><div style=\"font-size: 12px;\"><br></div><span style=\"font-size: 12px;\">Simulate a distillation column with 12 stages (excluding condenser and reboiler) where the feed is entering the 7th stage. The column is operated at uniform pressure of 101325 Pa and with a total condenser. The column is specified to have reflux ratio of 2 and bottoms flow rate of 50 mol/s.</span></div><div style=\"font-size: medium;\"><span style=\"font-size: 12px;\"><br></span></div><div style=\"font-size: medium;\"><span style=\"font-size: 12px;\"><br></span></div><div style=\"font-size: medium;\"><div style=\"font-size: 12px;\"><b><u>Problem Statement 3:</u></b></div><div style=\"font-size: 12px;\"><b><br></b></div><b style=\"font-size: 12px;\">Component System:</b><span style=\"font-size: 12px;\">&nbsp;Benzene, Toluene</span><div><b style=\"font-size: 12px;\">Thermodynamics:</b><span style=\"font-size: 12px;\">&nbsp;Raoult's Law</span><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><b><u>Material Stream Information</u></b></div><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><div style=\"font-size: medium;\"><div style=\"font-size: 12px;\"><b>Molar Flow Rate:</b>&nbsp;100 mol/s</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Benzene):</b>&nbsp;0.3</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Toluene):</b>&nbsp;0.7</div><div style=\"font-size: 12px;\"><b>Pressure:</b>&nbsp;101325 Pa</div><div style=\"font-size: 12px;\"><b>Temperature:</b>&nbsp;298.15 K</div></div></div><div style=\"font-size: 12px;\"><br></div><span style=\"font-size: 12px;\">Simulate a distillation column with 22 stages (excluding condenser and reboiler) where the feed is entering the 10th stage. The column is operated at uniform pressure of 101325 Pa and with a total condenser. The column is specified to have reflux ratio of 1.5 and bottoms flow rate of 70 mol/s.</span></div><div><span style=\"font-size: 12px;\"><br></span></div><div><span style=\"font-size: 12px;\"><br></span></div><div><div style=\"font-size: 12px;\"><b><u>Problem Statement 4:</u></b></div><div style=\"font-size: 12px;\"><b><br></b></div><b style=\"font-size: 12px;\">Component System:</b><span style=\"font-size: 12px;\">&nbsp;Benzene, Toluene</span><div><b style=\"font-size: 12px;\">Thermodynamics:</b><span style=\"font-size: 12px;\">&nbsp;Raoult's Law</span><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><b><u>Material Stream Information</u></b></div><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><div style=\"font-size: medium;\"><div style=\"font-size: 12px;\"><b>Molar Flow Rate:</b>&nbsp;96.8 mol/s</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Benzene):</b>&nbsp;0.3</div><div style=\"font-size: 12px;\"><b>Mole Fraction (Toluene):</b>&nbsp;0.7</div><div style=\"font-size: 12px;\"><b>Pressure:</b>&nbsp;101325 Pa</div><div style=\"font-size: 12px;\"><b>Temperature:</b>&nbsp;298.15 K</div></div></div><div style=\"font-size: 12px;\"><br></div><span style=\"font-size: 12px;\">Simulate a distillation column with 22 stages (excluding condenser and reboiler) where the feed is entering the 10th stage. The column is operated at top pressure of 151325 Pa and with a total condenser. The bottom pressure of the column is 101325 Pa. The column is specified to have reflux ratio of 1.5 and bottoms flow rate of 70 mol/s.</span></div></div><div><span style=\"font-size: 12px;\"><br></span></div><div><span style=\"font-size: 12px;\"><br></span></div><div><div style=\"font-size: 12px;\"><b><u>Problem Statement 5:</u></b></div><div style=\"font-size: 12px;\"><b><br></b></div><b style=\"font-size: 12px;\">Component System:</b><span style=\"font-size: 12px;\">&nbsp;Benzene, Toluene</span><div><b style=\"font-size: 12px;\">Thermodynamics:</b><span style=\"font-size: 12px;\">&nbsp;Raoult's Law</span><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><b><u>Material Stream Information</u></b></div><div style=\"font-size: 12px;\"><br></div><div style=\"font-size: 12px;\"><div style=\"font-size: medium;\"><div style=\"font-size: 12px;\"><div><b>Feed Stream 1</b></div><div><b>Molar Flow Rate:</b>&nbsp;100 mol/s</div><div><b>Mole Fraction (Benzene):</b>&nbsp;0.5</div><div><b>Mole Fraction (Toluene):</b>&nbsp;0.5</div><div><b>Pressure:</b>&nbsp;101325 Pa</div><div><b>Temperature:</b>&nbsp;298.15 K</div><div><br></div><div><div><b>Feed Stream 2</b></div><div><b>Molar Flow Rate:</b>&nbsp;100 mol/s</div><div><b>Mole Fraction (Benzene):</b>&nbsp;0.5</div><div><b>Mole Fraction (Toluene):</b>&nbsp;0.5</div><div><b>Pressure:</b>&nbsp;101325 Pa</div><div><b>Temperature:</b>&nbsp;298.15 K</div></div></div></div></div><div style=\"font-size: 12px;\"><br></div><span style=\"font-size: 12px;\">Simulate a distillation column with 5 stages (excluding condenser and reboiler) where the feed streams are entering the 3rd and 4th stage. The column is operated at uniform pressure of 101325 Pa and with a partial condenser. The column is specified to have reflux ratio of 2 and bottoms flow rate of 50 mol/s.</span></div></div></div></div><hr><div><span style=\"font-size: 12px;\"><br></span></div><div><span style=\"font-size: 12px;\">This package is created to demnostrate the simualtion of Distillation Column. Following models are created inside the package:</span></div><div><div style=\"font-size: 12px;\"><ol><li><a href=\"modelica://Simulator.Examples.Distillation.Condenser\">Condenser</a>&nbsp;(Non-executable model):&nbsp;created to extend the condenser along with the necessary thermodynamic package.</li><li><a href=\"modelica://Simulator.Examples.Distillation.Tray\">Tray</a>&nbsp;(Non-executable model):&nbsp;created to extend the tray along with the necessary thermodynamic package.</li><li><a href=\"modelica://Simulator.Examples.Distillation.Reboiler\">Reboiler</a>&nbsp;(Non-executable model):&nbsp;created to extend the reboiler along with the necessary thermodynamic package.</li><li><a href=\"modelica://Simulator.Examples.Distillation.DistColumn\">DistColumn</a>&nbsp;(Non-executable model):&nbsp;created to extend the Distillation Column along with the necessary thermodynamic package.</li><li><a href=\"modelica://Simulator.Examples.Distillation.ms\">ms</a>&nbsp;(Non-executable model):&nbsp;created to extend the material stream along with the necessary thermodynamic package.</li><li><a href=\"modelica://Simulator.Examples.Distillation.Test\">Test</a>&nbsp;(Executable model for Problem Statement 1):&nbsp;All the components are defined, material stream &amp; Distillation Column specifications are declared, model instances are connected to make the file executable.</li><li><a href=\"modelica://Simulator.Examples.Distillation.Test2\">Test2</a>&nbsp;(Executable model for Problem Statement 2): All the components are defined, material stream &amp;&nbsp;Distillation Column&nbsp;specifications are declared, model instances are connected to make the file executable.</li><li><a href=\"modelica://Simulator.Examples.Distillation.Test3\">Test3</a>&nbsp;(Executable model for Problem Statement 3): All the components are defined, material stream &amp;&nbsp;Distillation Column&nbsp;specifications are declared, model instances are connected to make the file executable.</li><li><a href=\"modelica://Simulator.Examples.Distillation.Test4\">Test4</a>&nbsp;(Executable model for Problem Statement 4): All the components are defined, material stream &amp;&nbsp;Distillation Column&nbsp;specifications are declared, model instances are connected to make the file executable.</li><li><a href=\"modelica://Simulator.Examples.Distillation.multiFeedTest\">multiFeedTest</a>&nbsp;(Executable model for Problem Statement 5): All the components are defined, material stream &amp;&nbsp;Distillation Column&nbsp;specifications are declared, model instances are connected to make the file executable.</li></ol></div></div></div></div></body></html>"));
 end Distillation;

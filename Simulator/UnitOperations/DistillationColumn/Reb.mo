@@ -5,26 +5,26 @@ within Simulator.UnitOperations.DistillationColumn;
     parameter Integer Nc = 2 "Number of components";
     parameter ChemsepDatabase.GeneralProperties C[Nc];
     parameter Boolean Bin = false;
-    Real P(unit = "Pa", min = 0, start = Pg) "Pressure";
-    Real T(unit = "K", min = 0, start = Tg) "Temperature";
-    Real Fin(unit = "mol/s", min = 0, start = Fg) "Feed molar flow";
-    Real Hin(unit = "kJ/kmol",start=Htotg) "Feed molar enthalpy";
-    Real Hliqin(unit = "kJ/kmol",start=Hliqg) "Inlet liquid molar enthalpy";
-    Real xin_c[Nc](each unit = "-", each min = 0, each max = 1, start=xguess) "Feed components mole fraction"; 
-    Real Fliqin(unit = "mol/s", min = 0, start =Fg) "Inlet liquid molar flow";
-    Real xliqin_c[Nc](each unit = "-", each min = 0, each max = 1,start=xg) "Inlet liquid component mole fraction";
+    Real P(unit = "Pa", min = 0, start = P_N) "Pressure";
+    Real T(unit = "K", min = 0, start = Tbt) "Temperature";
+    Real Fin(unit = "mol/s", min = 0) "Feed molar flow";
+    Real Hin(unit = "kJ/kmol") "Feed molar enthalpy";
+    Real Hliqin(unit = "kJ/kmol") "Inlet liquid molar enthalpy";
+    Real xin_c[Nc](each unit = "-", each min = 0, each max = 1) "Feed components mole fraction"; 
+    Real Fliqin(unit = "mol/s", min = 0) "Inlet liquid molar flow";
+    Real xliqin_c[Nc](each unit = "-", each min = 0, each max = 1,start= x[1, :]) "Inlet liquid component mole fraction";
    
-    Real Fout(unit = "mol/s", min = 0, start = Fg) "Side draw molar flow";
-    Real Fvapout(unit = "mol/s", min = 0, start =Fvapg) "Outlet vapor molar flow";
-    Real xout_c[Nc](each unit = "-", each min = 0, each max = 1, start=xg) "Side draw mole fraction";
-    Real xvapout_c[Nc](each unit = "-", each min = 0, each max = 1, start=xvapg) "Outlet vapor component mole fraction";
-    Real Hvapout(unit = "kJ/kmol",start=Hvapg) "Outlet vapor molar enthalpy";
+    Real Fout(unit = "mol/s", min = 0, start = B1) "Side draw molar flow";
+    Real Fvapout(unit = "mol/s", min = 0, start = V_O) "Outlet vapor molar flow";
+    Real xout_c[Nc](each unit = "-", each min = 0, each max = 1, start = Xb) "Side draw mole fraction";
+    Real xvapout_c[Nc](each unit = "-", each min = 0, each max = 1, start = Xb) "Outlet vapor component mole fraction";
+    Real Hvapout(unit = "kJ/kmol") "Outlet vapor molar enthalpy";
     Real Hvapout_c[Nc](each unit = "kJ/kmol") "Outlet vapor component molar enthalpy";
     Real Q(unit = "W") "Heat load";
     Real Hout(unit = "kJ/kmol") "Side draw molar enthalpy";
-    Real x_pc[3, Nc](each unit = "-", each min = 0, each max = 1, each start = 1/(Nc + 1)) "Component mole fraction";
-    Real Pdew(unit = "Pa", min = 0, start = sum(C[:].Pc)/Nc) "Dew point pressure";
-    Real Pbubl(unit = "Pa", min = 0, start = sum(C[:].Pc)/Nc) "Bubble point pressure";
+    Real x_pc[3, Nc](each unit = "-", each min = 0, each max = 1) "Component mole fraction";
+    Real Pdew(unit = "Pa", min = 0) "Dew point pressure";
+    Real Pbubl(unit = "Pa", min = 0) "Bubble point pressure";
    
     replaceable Simulator.Files.Interfaces.matConn In(Nc = Nc) if Bin annotation(
       Placement(visible = true, transformation(origin = {-100, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-100, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
@@ -39,7 +39,7 @@ within Simulator.UnitOperations.DistillationColumn;
     Simulator.Files.Interfaces.enConn En annotation(
       Placement(visible = true, transformation(origin = {100, 40}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {100, 40}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     
-    extends GuessModels.InitialGuess;
+    extends Examples.Distillation.Guess;
     
   equation
 //connector equation
@@ -69,12 +69,12 @@ within Simulator.UnitOperations.DistillationColumn;
      x_pc[2, :] = xout_c[:];
 //This equation is temporarily valid since this is only "partial" reboiler. Rewrite equation when "total" reboiler functionality is added
     x_pc[3, :] = xvapout_c[:];
-//Bubble point calculation
+////Bubble point calculation
     Pbubl = sum(gmabubl_c[:] .* x_pc[1, :] .* Pvap_c[:] ./ philiqbubl_c[:]);
 //Dew point calculation
     Pdew = 1 / sum(x_pc[1, :] ./ (gmadew_c[:] .* Pvap_c[:]) .* phivapdew_c[:]);
 //molar balance
-//  Fin + Fliqin = Fout + Fvapout;
+  Fin + Fliqin = Fout + Fvapout;
     for i in 1:Nc loop
       Fin .* xin_c[i] + Fliqin .* xliqin_c[i] = Fout .* xout_c[i] + Fvapout .* xvapout_c[i];
     end for;
@@ -82,7 +82,7 @@ within Simulator.UnitOperations.DistillationColumn;
     xvapout_c[:] = K_c[:] .* xout_c[:];
 //summation equation
 //    sum(xvapout_c[:]) = 1;
-    sum(xout_c[:]) = 1;
+//    sum(xout_c[:]) = 1;
     for i in 1:Nc loop
       Hvapout_c[i] = Simulator.Files.ThermodynamicFunctions.HVapId(C[i].SH, C[i].VapCp, C[i].HOV, C[i].Tc, T);
     end for;
