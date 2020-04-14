@@ -9,6 +9,10 @@ within Simulator.UnitOperations.DistillationColumn;
     import data = Simulator.Files.ChemsepDatabase;
     parameter Boolean Bin_t[Nt] = Simulator.Files.OtherFunctions.colBoolCalc(Nt, Ni, InT_s) "Stream stage associations" annotation(
     Dialog(tab = "Column Specifications", group = "Component Parameters"));
+    parameter Real Dynamic_t[Nt] = Simulator.Files.OtherFunctions.colDynCalc(Nt, dynamic) "Input disturbance in feed tray" annotation(
+    Dialog(tab = "Column Specifications", group = "Dynamics"));
+    parameter Integer dynamic "If the column is to be operated in Dynamic mode, Give 1" annotation(
+    Dialog(tab = "Column Specifications", group = "Dynamics"));
     parameter Integer Nt = 4 "Number of stages" annotation(
     Dialog(tab = "Column Specifications", group = "Calculation Parameters"));
     parameter Integer Nout = 0 "Number of side draws" annotation(

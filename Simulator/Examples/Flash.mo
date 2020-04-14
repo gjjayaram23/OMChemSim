@@ -27,13 +27,13 @@ package Flash
     parameter data.GeneralProperties C[Nc] = {benz, tol};
     //=====================================================================
     //Instantiation of Streams and Blocks
-    Simulator.Examples.Flash.ms S1(Nc = Nc, C = C) annotation(
+    Simulator.Examples.Flash.ms S1( C = C, DelF = 1, Disturbance_Variable = Simulator.Types.variable.Flow, Inlet_Disturbance = Simulator.Types.disturbance.Step,Nc = Nc, UserInput = true, timestep = 2) annotation(
       Placement(visible = true, transformation(origin = {-76, 4}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     Simulator.Examples.Flash.ms S2(Nc = Nc, C = C) annotation(
       Placement(visible = true, transformation(origin = {56, -16}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     Simulator.Examples.Flash.ms S3(Nc = Nc, C = C) annotation(
       Placement(visible = true, transformation(origin = {54, 28}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-    Simulator.Examples.Flash.fls B1(Nc = Nc, C = C) annotation(
+    Simulator.Examples.Flash.fls B1( BTdef = true,C = C, Dynamics = true,Nc = Nc, Pset = 101325, Tdef = 370, hset = 1) annotation(
       Placement(visible = true, transformation(origin = {-14, 2}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   equation
 //=====================================================================

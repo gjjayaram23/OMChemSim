@@ -18,9 +18,9 @@ package Cooler
     parameter data.Water wat;
     parameter Integer Nc = 3;
     parameter data.GeneralProperties C[Nc] = {meth, eth, wat};
-    Simulator.UnitOperations.Cooler cooler1(Pdel = 0, Eff = 1, Nc = Nc, C = C) annotation(
+    Simulator.UnitOperations.Cooler cooler1( C = C, Dynamics = true, Eff = 1, Nc = Nc,Pdel = 0) annotation(
       Placement(visible = true, transformation(origin = {-8, 18}, extent = {{-14, -14}, {14, 14}}, rotation = 0)));
-     Simulator.Examples.Cooler.ms inlet(Nc = Nc, C = C) annotation(
+     Simulator.Examples.Cooler.ms inlet( C = C, DelF = 1, Disturbance_Variable = Simulator.Types.variable.Flow, Inlet_Disturbance = Simulator.Types.disturbance.Step,Nc = Nc, UserInput = true, timestep = 2) annotation(
       Placement(visible = true, transformation(origin = {-72, 18}, extent = {{-12, -12}, {12, 12}}, rotation = 0)));
     Simulator.Examples.Cooler.ms outlet(Nc = Nc, C = C) annotation(
       Placement(visible = true, transformation(origin = {60, 12}, extent = {{-12, -12}, {12, 12}}, rotation = 0)));

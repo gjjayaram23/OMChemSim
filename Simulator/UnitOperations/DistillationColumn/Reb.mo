@@ -1,10 +1,14 @@
 within Simulator.UnitOperations.DistillationColumn;
 
   model Reb "Model of a reboiler used in distillation column"
+//========================================================================================
     import Simulator.Files.*;
     parameter Integer Nc = 2 "Number of components";
     parameter ChemsepDatabase.GeneralProperties C[Nc];
     parameter Boolean Bin = false;
+    parameter Integer Dynamic;
+    parameter Real Cd = 20, A = 2;
+//========================================================================================
     Real P(unit = "Pa", min = 0, start = Pg) "Pressure";
     Real T(unit = "K", min = 0, start = Tg) "Temperature";
     Real Fin(unit = "mol/s", min = 0, start = Fg) "Feed molar flow";
@@ -12,8 +16,7 @@ within Simulator.UnitOperations.DistillationColumn;
     Real Hliqin(unit = "kJ/kmol",start=Hliqg) "Inlet liquid molar enthalpy";
     Real xin_c[Nc](each unit = "-", each min = 0, each max = 1, start=xguess) "Feed components mole fraction"; 
     Real Fliqin(unit = "mol/s", min = 0, start =Fg) "Inlet liquid molar flow";
-    Real xliqin_c[Nc](each unit = "-", each min = 0, each max = 1,start=xg) "Inlet liquid component mole fraction";
-   
+    Real xliqin_c[Nc](each unit = "-", each min = 0, each max = 1,start=xg) "Inlet liquid component mole fraction"; 
     Real Fout(unit = "mol/s", min = 0, start = Fg) "Side draw molar flow";
     Real Fvapout(unit = "mol/s", min = 0, start =Fvapg) "Outlet vapor molar flow";
     Real xout_c[Nc](each unit = "-", each min = 0, each max = 1, start=xg) "Side draw mole fraction";
@@ -25,7 +28,11 @@ within Simulator.UnitOperations.DistillationColumn;
     Real x_pc[3, Nc](each unit = "-", each min = 0, each max = 1, each start = 1/(Nc + 1)) "Component mole fraction";
     Real Pdew(unit = "Pa", min = 0, start = sum(C[:].Pc)/Nc) "Dew point pressure";
     Real Pbubl(unit = "Pa", min = 0, start = sum(C[:].Pc)/Nc) "Bubble point pressure";
-   
+    Real M[Nc](each unit = "mol", each start = 5000) "Component Molar Holdup";
+    Real ML(unit = "mol", start = 1000) "Total Molar Holdup";
+    Real rholiq_c[Nc](each unit = "mol/m^3") "Component Molar Density";
+    Real h(unit = "m") "Height of liquid holdup";
+//========================================================================================   
     replaceable Simulator.Files.Interfaces.matConn In(Nc = Nc) if Bin annotation(
       Placement(visible = true, transformation(origin = {-100, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-100, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     replaceable Simulator.Files.Interfaces.matConn In_Dmy(Nc = Nc, P = 0, T = 0, x_pc = zeros(3, Nc), F = 0, H = 0, S = 0, xvap = 0) if not Bin annotation(
@@ -40,7 +47,11 @@ within Simulator.UnitOperations.DistillationColumn;
       Placement(visible = true, transformation(origin = {100, 40}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {100, 40}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     
     extends GuessModels.InitialGuess;
-    
+//========================================================================================    
+  initial equation
+ if Dynamic == 1 then
+ der(M[1]) = 0;
+ end if;
   equation
 //connector equation
     if Bin then
@@ -64,6 +75,7 @@ within Simulator.UnitOperations.DistillationColumn;
     Out_Vap.H = Hvapout;
     Out_Vap.x_c[:] = xvapout_c[:];
     En.Q = Q;
+//========================================================================================
 //Adjustment for thermodynamic packages
     x_pc[1, :] = (Fout .* xout_c[:] + Fvapout .* xvapout_c[:]) ./ (Fout + Fvapout);
      x_pc[2, :] = xout_c[:];
@@ -73,23 +85,28 @@ within Simulator.UnitOperations.DistillationColumn;
     Pbubl = sum(gmabubl_c[:] .* x_pc[1, :] .* Pvap_c[:] ./ philiqbubl_c[:]);
 //Dew point calculation
     Pdew = 1 / sum(x_pc[1, :] ./ (gmadew_c[:] .* Pvap_c[:]) .* phivapdew_c[:]);
-//molar balance
-//  Fin + Fliqin = Fout + Fvapout;
-    for i in 1:Nc loop
-      Fin .* xin_c[i] + Fliqin .* xliqin_c[i] = Fout .* xout_c[i] + Fvapout .* xvapout_c[i];
-    end for;
-//equillibrium
+//========================================================================================
+//Mole Balance
+ for i in 1:Nc loop
+rholiq_c[i] = Simulator.Files.ThermodynamicFunctions.Dens(C[i].LiqDen, C[i].Tc, T, P);
+end for;
+for i in 1:Nc loop
+    Fin .* xin_c[i] + Fliqin .* xliqin_c[i] - Fout .* xout_c[i] - Fvapout .* xvapout_c[i] = if Dynamic == 1 then der(M[i]) else 0 ;
+end for;
+M = ML .* xout_c ;
+ML = sum(rholiq_c .* xout_c) * A * h;
+Fout = Cd * sqrt(2*9.81*h);
+//Equillibrium
     xvapout_c[:] = K_c[:] .* xout_c[:];
-//summation equation
-//    sum(xvapout_c[:]) = 1;
+//Summation Equation
     sum(xout_c[:]) = 1;
+//========================================================================================
     for i in 1:Nc loop
       Hvapout_c[i] = Simulator.Files.ThermodynamicFunctions.HVapId(C[i].SH, C[i].VapCp, C[i].HOV, C[i].Tc, T);
     end for;
     Hvapout = sum(xvapout_c[:] .* Hvapout_c[:]) + Hres_p[3];
-// bubble point calculations
+//Reboiler Temperature
     P = sum(xout_c[:] .* exp(C[:].VP[2] + C[:].VP[3] / T + C[:].VP[4] * log(T) + C[:].VP[5] .* T .^ C[:].VP[6]));
-//    Fout = 10;
     Fin * Hin + Fliqin * Hliqin = Fout * Hout + Fvapout * Hvapout + Q;
     annotation(
       Diagram(coordinateSystem(extent = {{-100, -40}, {100, 40}})),

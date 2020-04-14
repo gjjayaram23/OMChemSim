@@ -2,9 +2,13 @@ within Simulator.UnitOperations.DistillationColumn;
 
   model Cond "Model of a condenser used in distillation column"
     import Simulator.Files.*;
+//==================================================================================
     parameter ChemsepDatabase.GeneralProperties C[Nc];
     parameter Integer Nc = 2 "Number of components";
-    parameter Boolean Bin = false;
+    parameter Boolean Bin = false "Feed Input to the tray";
+    parameter Integer Dynamic;
+    parameter Real Cd = 20, A = 2;
+//==================================================================================
     Real P(unit = "K", min = 0, start = Pg) "Pressure";
     Real T(unit = "Pa", min = 0, start = Tg) "Temperature";
     Real Fin(unit = "mol/s", min = 0, start =Fg) "Feed molar flow rate";
@@ -26,12 +30,16 @@ within Simulator.UnitOperations.DistillationColumn;
     Real x_pc[3, Nc](each unit = "-", each min = 0, each max = 1,start={xguess,xguess,xguess}) "Component mole fraction";
     Real Pdew(unit = "Pa", min = 0, start = Pmax) "Dew point pressure";
     Real Pbubl(unit = "Pa", min = 0,start=Pmin) "Bubble point pressure";
-    
+    Real M[Nc](each unit = "mol", each start = 5000) "Component Molar Holdup";
+    Real ML(unit = "mol") "Total Molar Holdup";
+    Real rholiq_c[Nc](each unit = "mol/m^3") "Component Molar Density";
+    Real h(unit = "m") "Height of liquid holdup";
     //String sideDrawType(start = "Null");
     //L or V
     parameter String Ctype "Condenser type: Partial or Total";
     replaceable Simulator.Files.Interfaces.matConn In(Nc = Nc) if Bin annotation(
       Placement(visible = true, transformation(origin = {-100, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-100, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+//==================================================================================
     Simulator.Files.Interfaces.matConn In_Dmy(Nc = Nc, P = 0, T = 0, x_pc = zeros(3, Nc), F = 0, H = 0, S = 0, xvap = 0) if not Bin annotation(
       Placement(visible = true, transformation(origin = {-100, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-100, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     Simulator.Files.Interfaces.matConn Out(Nc = Nc) annotation(
@@ -44,7 +52,11 @@ within Simulator.UnitOperations.DistillationColumn;
       Placement(visible = true, transformation(origin = {100, 40}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {100, 40}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     
     extends GuessModels.InitialGuess;
-    
+//==================================================================================    
+  initial equation
+  if Dynamic == 1 then
+  der(M) = zeros(Nc);
+  end if;
   equation
 //connector equation
     if Bin then
@@ -69,6 +81,7 @@ within Simulator.UnitOperations.DistillationColumn;
     In_Vap.H = Hvapin;
     In_Vap.x_c[:] = xvapin_c[:];
     En.Q = Q;
+//==================================================================================
 //Adjustment for thermodynamic packages
     x_pc[1, :] = (Fout .* xout_c[:] + Fliqout .* xliqout_c[:]) ./ (Fout + Fliqout);
      x_pc[2, :] = xliqout_c[:];
@@ -77,19 +90,25 @@ within Simulator.UnitOperations.DistillationColumn;
     Pbubl = sum(gmabubl_c[:] .* x_pc[1, :] .* Pvap_c[:] ./ philiqbubl_c[:]);
 //Dew point calculation
     Pdew = 1 / sum(x_pc[1, :] ./ (gmadew_c[:] .* Pvap_c[:]) .* phivapdew_c[:]);
-//molar balance
-//Fin + Fvapin = Fout + Fliqout;
-    Fin .* xin_c[:] + Fvapin .* xvapin_c[:] = Fout .* xout_c[:] + Fliqout .* xliqout_c[:];
-//equillibrium
+//==================================================================================
+//Mole balance
+  for i in 1:Nc loop
+  rholiq_c[i] = Simulator.Files.ThermodynamicFunctions.Dens(C[i].LiqDen, C[i].Tc, T, P);
+  end for;
+  Fin .* xin_c[:] + Fvapin .* xvapin_c[:] - Fout .* xout_c[:] - Fliqout .* xliqout_c[:] = if Dynamic == 1 then der(M) else zeros(Nc);
+  M = ML .* xliqout_c ;
+  ML = sum(rholiq_c .* xliqout_c) * A * h;
+  Fout = Cd * sqrt(2*9.81*h);
+//Equillibrium
     if Ctype == "Partial" then
       xout_c[:] = K_c[:] .* xliqout_c[:];
     elseif Ctype == "Total" then
       xout_c[:] = xliqout_c[:];
     end if;
-//summation equation
-//  sum(xliqout_c[:]) = 1;
+//Summation Equation
     sum(xout_c[:]) = 1;
-// Enthalpy balance
+//==================================================================================
+// Energy balance
     Fin * Hin + Fvapin * Hvapin = Fout * Hout + Fliqout * Hliqout + Q;
 //Temperature calculation
     if Ctype == "Total" then
@@ -97,7 +116,7 @@ within Simulator.UnitOperations.DistillationColumn;
     elseif Ctype == "Partial" then
       1 / P = sum(xout_c[:] ./ Pvap_c[:]);
     end if;
-// outlet liquid molar enthalpy calculation
+// Outlet Liquid Molar Enthalpy Calculation
     for i in 1:Nc loop
       Hliqout_c[i] = Simulator.Files.ThermodynamicFunctions.HLiqId(C[i].SH, C[i].VapCp, C[i].HOV, C[i].Tc, T);
     end for;

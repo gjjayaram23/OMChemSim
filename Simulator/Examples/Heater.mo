@@ -17,13 +17,13 @@ package Heater
     parameter data.Water wat;
     parameter Integer Nc = 3;
     parameter data.GeneralProperties C[Nc] = {meth, eth, wat};
-    Simulator.Examples.Heater.ms inlet(Nc = Nc, C = C) annotation(
+    Simulator.Examples.Heater.ms inlet( C = C, DelF = 1, Disturbance_Variable = Simulator.Types.variable.Flow, Inlet_Disturbance = Simulator.Types.disturbance.Step,Nc = Nc, UserInput = true, timestep = 2) annotation(
       Placement(visible = true, transformation(origin = {-80, 4}, extent = {{-12, -12}, {12, 12}}, rotation = 0)));
     Simulator.Examples.Heater.ms outlet(Nc = Nc, C = C, T(start = 353), x_pc(start = {{0.33, 0.33, 0.34}, {0.24, 0.31, 0.43}, {0.44, 0.34, 0.31}}), P(start = 101325)) annotation(
       Placement(visible = true, transformation(origin = {20, 8}, extent = {{-12, -12}, {12, 12}}, rotation = 0)));
     Simulator.Streams.EnergyStream energy annotation(
       Placement(visible = true, transformation(origin = {-75, -35}, extent = {{-13, -13}, {13, 13}}, rotation = 0)));
-  UnitOperations.Heater heater1(C = C, Eff = 1, Nc = Nc, Pdel = 101325)  annotation(
+  UnitOperations.Heater heater1(C = C, Dynamics = true, Eff = 1, Nc = Nc, Pdel = 101325)  annotation(
       Placement(visible = true, transformation(origin = {-30, 6}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   equation
     connect(energy.Out, heater1.En) annotation(

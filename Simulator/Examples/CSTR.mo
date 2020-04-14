@@ -18,9 +18,9 @@ package CSTR
     parameter data.Ethyleneglycol eg;
     parameter data.GeneralProperties C[Nc] = {e, w, eg};
     parameter Integer Nc = 3;
-    Simulator.UnitOperations.CSTR bmr1(C = C, Mode = "Define_Out_Temperature", Nc = Nc, Phase = 1, Tdef = 350, V = 1) annotation(
+    Simulator.UnitOperations.CSTR bmr1(C = C, Dynamics = true, Mode = "Define_Out_Temperature", Nc = Nc, Phase = 3, Tdef = 350, V = 1) annotation(
       Placement(visible = true, transformation(origin = {1, -1}, extent = {{-17, -17}, {17, 17}}, rotation = 0)));
-    Simulator.Examples.CSTR.MS ms1(C = C, Nc = Nc) annotation(
+    Simulator.Examples.CSTR.MS ms1(C = C, DelF = 1, Disturbance_Variable = Simulator.Types.variable.Flow, Inlet_Disturbance = Simulator.Types.disturbance.Step, Nc = Nc, UserInput = true, timestep = 2) annotation(
       Placement(visible = true, transformation(origin = {-50, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     Simulator.Examples.CSTR.MS ms2(C = C, Nc = Nc) annotation(
       Placement(visible = true, transformation(origin = {54, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));

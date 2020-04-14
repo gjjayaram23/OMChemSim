@@ -25,9 +25,9 @@ package Distillation
 
   model DistColumn
     extends Simulator.UnitOperations.DistillationColumn.DistCol;
-    Condenser condenser(Nc = Nc, C = C, Ctype = Ctype, Bin = Bin_t[1]);
-    Reboiler reboiler(Nc = Nc, C = C, Bin = Bin_t[Nt]);
-    Tray tray[Nt - 2](each Nc = Nc, each C = C, Bin = Bin_t[2:Nt - 1]);
+    Condenser condenser(Nc = Nc, C = C, Ctype = Ctype, Bin = Bin_t[1], Dynamic = dynamic);
+    Reboiler reboiler(Nc = Nc, C = C, Bin = Bin_t[Nt], Dynamic = dynamic);
+    Tray tray[Nt - 2](each Nc = Nc, each C = C, Bin = Bin_t[2:Nt - 1], each Dynamic = dynamic);
   annotation(
       Documentation(info = "<html><head></head><body><span style=\"font-size: 12px;\">This is a non-executable model is created inside the package Distillation to extend the&nbsp;</span><a href=\"modelica://Simulator.UnitOperations.DistillationColumn.DistCol\">Distillation Column</a><span style=\"font-size: 12px;\">&nbsp;model along with the necessary property method from&nbsp;</span>ThermodynamicPackages<span style=\"font-size: 12px;\">&nbsp;which is&nbsp;</span><a href=\"modelica://Simulator.Files.ThermodynamicPackages.RaoultsLaw\">RaoultsLaw</a><span style=\"font-size: 12px;\">&nbsp;in this case.</span><div><br></div><div>Condenser, Tray and Reboiler instances are also instantiated in this model to complete building of distillation column model.<br><div><span style=\"font-size: 12px;\"><br></span></div><div>It will be instantiated in the&nbsp;<a href=\"modelica://Simulator.Examples.Distillation.Test\">Test</a>,&nbsp;<a href=\"modelica://Simulator.Examples.Distillation.Test2\">Test2</a>,&nbsp;<a href=\"modelica://Simulator.Examples.Distillation.Test3\">Test3</a>,<a href=\"modelica://Simulator.Examples.Distillation.Test4\">Test4</a>,&nbsp;<a href=\"modelica://Simulator.Examples.Distillation.multiFeedTest\">multiFeedTest</a>&nbsp;model to create the required instance of the distillation column model.</div></div></body></html>"));
   end DistColumn;
@@ -46,9 +46,9 @@ package Distillation
     parameter data.Benzene benz;
     parameter data.Toluene tol;
     parameter Simulator.Files.ChemsepDatabase.GeneralProperties C[Nc] = {benz, tol};
-    Simulator.Examples.Distillation.DistColumn distCol(Nc = Nc, C = C, Nt = 4, Ni = 1, InT_s = {3}, Ctype = "Partial") annotation(
+    Simulator.Examples.Distillation.DistColumn distCol( C = C, Ctype = "Partial", InT_s = {3},Nc = Nc, Ni = 1, Nt = 4, dynamic = 1) annotation(
       Placement(visible = true, transformation(origin = {-22, 8}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-    Simulator.Examples.Distillation.ms feed(Nc = Nc, C = C) annotation(
+    Simulator.Examples.Distillation.ms feed( C = C, DelF = 1, Disturbance_Variable = Simulator.Types.variable.Flow, Inlet_Disturbance = Simulator.Types.disturbance.Step,Nc = Nc, UserInput = true, timestep = 2) annotation(
       Placement(visible = true, transformation(origin = {-76, 2}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     Simulator.Examples.Distillation.ms distillate(Nc = Nc, C = C) annotation(
       Placement(visible = true, transformation(origin = {64, 22}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
@@ -130,9 +130,9 @@ package Distillation
     parameter data.Benzene benz;
     parameter data.Toluene tol;
     parameter Simulator.Files.ChemsepDatabase.GeneralProperties C[Nc] = {benz, tol};
-    Simulator.Examples.Distillation.DistColumn distCol(Nc = Nc, C = C, Ni = 1, Nt = 22, InT_s = {10}) annotation(
+    Simulator.Examples.Distillation.DistColumn distCol( C = C, InT_s = {10},Nc = Nc, Ni = 1, Nt = 22, dynamic = 1) annotation(
       Placement(visible = true, transformation(origin = {-3, 3}, extent = {{-25, -25}, {25, 25}}, rotation = 0)));
-    Simulator.Examples.Distillation.ms feed(Nc = Nc, C = C) annotation(
+    Simulator.Examples.Distillation.ms feed( C = C, DelF = 1, Disturbance_Variable = Simulator.Types.variable.Flow, Inlet_Disturbance = Simulator.Types.disturbance.Step,Nc = Nc, UserInput = true, timestep = 2) annotation(
       Placement(visible = true, transformation(origin = {-76, 2}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     Simulator.Examples.Distillation.ms distillate(Nc = Nc, C = C) annotation(
       Placement(visible = true, transformation(origin = {64, 22}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
