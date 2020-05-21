@@ -63,8 +63,8 @@ initial equation
 P = Pset;
 h = hset;
 if Dynamics == true then
-//der(MT) = 0;
-for i in 1:Nc loop
+der(MT) = 0;
+for i in 1:Nc-1 loop
 der(M[i]) = 0;
 end for;
 end if;  
@@ -100,7 +100,8 @@ rholiq_c[i] = Simulator.Files.ThermodynamicFunctions.Dens(C[i].LiqDen, C[i].Tc, 
 end for;
 //=================================================================================
 //Mole Balance
-for i in 1:Nc loop
+  F_p[1] - F_p[2] - F_p[3] = if Dynamics == true then der(MT) else 0;
+for i in 1:Nc-1 loop
   x_pc[1, i] .* F_p[1] - x_pc[2, i] .* F_p[2] - x_pc[3, i] .* F_p[3] = if Dynamics == true then der(M[i]) else 0;
   M[i] = ML .* x_pc[2, i] + MV .* x_pc[3, i];
 end for;
@@ -121,6 +122,7 @@ end for;
   Pdew = 1 / sum(x_pc[1, :] ./ (gmadew_c[:] .* exp(C[:].VP[2] + C[:].VP[3] / T + C[:].VP[4] * log(T) + C[:].VP[5] .* T .^ C[:].VP[6])) .* phivapdew_c[:]);
   if P >= Pbubl then
 //below bubble point region
+    F_p[3] = 1e-15;
     F_p[2] = F_p[1];
     x_pc[2, :] = x_pc[1, :];
 //VLE region
@@ -128,10 +130,12 @@ end for;
     for i in 1:Nc loop
     x_pc[3, i] = K_c[i] * x_pc[2, i];
     end for;
+    sum(x_pc[3, :]) = 1;
     sum(x_pc[2, :]) = 1;
   else
 //above dew point region
     F_p[3] = F_p[1];
+    F_p[2] = 1e-15;
     x_pc[3, :] = x_pc[1, :];
   end if;
 //===================================================================================
