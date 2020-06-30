@@ -105,17 +105,19 @@ extends Modelica.Icons.Package;
       __OpenModelica_commandLineOptions = "");
   end Cond;
 
-  model DistTray "Model of a tray used in distillation column"
+  model PackingSection "Model of a tray used in distillation column"
     import Simulator.Files.*;
     parameter ChemsepDatabase.GeneralProperties C[Nc];
     parameter Integer Nc = 2 "Number of components";
     parameter Boolean Bin = true;
-    parameter Real DL = 2e-09, DV = 1.5e-05;
-    parameter Real a = 2e-03;
-    parameter Real dD(unit = "m") = 0.3 "Diameter of distributor hole";
+    parameter Real DL = 5.6e-09 "Liquid Diffusivity";
+    parameter Real DV = 4.5e-06 "Vapour Diffusivity";
+    parameter Real sigma = 20e-03 "Liquid Surface Tension";
+    parameter Real z = 4 "Height of Packing";
+    parameter Real dsec(unit = "m") = 1 "Diameter of the packing section";
     parameter Real dp(unit = "m") = 13e-03 "Diameter of Raschig Ring packing" ;
     parameter Real epslon = 0.64 "Voidage";
-    parameter Real Fp = 1900 "Packing pactor";
+    parameter String Corrln "Packing Correlation: Shulman or Onda";
     Real P(unit = "Pa", min = 0, start = Pg) "Pressure";
     Real T(unit = "K", min = 0, start = Tg) "Temperature";
     Real Fin(unit = "mol/s", min = 0, start = Fg) "Feed molar flow";
@@ -133,15 +135,17 @@ extends Modelica.Icons.Package;
     Real Hout(unit = "kJ/kmol", start = Htotg) "Side draw molar enthalpy";
     Real Hvapout_c[Nc](unit = "kJ/kmol", start = Hvapg) "Outlet components vapor molar enthalpy";
     Real Hliqout_c[Nc](unit = "kJ/kmol", start = Hliqg) "Outlet components liquid molar enthalpy";
-    Real xI[Nc](start = xg), yI[Nc](start = yg);
+    Real xI[Nc](start = xg) "Interface Liquid Composition", yI[Nc](start = yg) "Interface Vapor Composition";
     Real x_pc[3, Nc](each min =0, each max = 0,start={xguess,xguess,xguess});
-    Real Nliq[Nc](each unit = "mol/m^2.s"), Nvap[Nc](each unit = "mol/m^2.s"), NV(unit = "mol/m^2.s"), NL(unit = "mol/m^2.s");
+    Real Nliq[Nc](each unit = "mol/m^2.s") "Component Molar Flux of liquid", Nvap[Nc](each unit = "mol/m^2.s") "Component Molar Flux of liquid", NV(unit = "mol/m^2.s") "Total Molar Flux of vapor", NL(unit = "mol/m^2.s") "Total Molar Flux of liquid";
     Real Pdmy1, Tdmy1, xdmy1_pc[3, Nc], Fdmy1, Hdmy1, Sdmy1, xvapdmy1;
-    Real rholiq_c[Nc], rhovap_c[Nc], vv(start = 10), vl(start = 1);
-    Real muL[Nc], ReL, ScL, muliq, rholiq ;
-    Real muV[Nc], ReV, ScV, muvap, rhovap ;
-    Real MW_p[3];
-    Real KL, KV;
+    Real rholiq_c[Nc] "Molar Liquid Density", rhovap_c[Nc] "Vapor Density", vv(start = 10) "Vapor Velocity", vl(start = 1) "Liquid Velocity";
+    Real muL[Nc] "Component Viscosity of Liquid", ReL "Reynolds Number of liquid", ScL "Schmid number of Liquid", muliq "Mixture Viscosity", rholiq "Mixture density" ;
+    Real muV[Nc] "Component Viscosity of Vapor", ReV "Reynolds Number of Vapor", ScV "Schmid number of Vapor", muvap "Mixture Viscosity", rhovap "Mixture density" ;
+    Real MW_p[3] "Molecular Weight of Phases";
+    Real KL "Liquid Mass Transfer Coefficient", KV "Vapor Mass Transfer Coefficient";
+    Real ap "Specific Surface area of packing section";
+    Real ae "Effective area of packing section";
     //this is adjustment done since OpenModelica 1.11 is not handling array modification properly
     String OutType(start = "Null");
     //L or V
@@ -163,10 +167,10 @@ extends Modelica.Icons.Package;
       Placement(visible = true, transformation(origin = {100, 40}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {100, 40}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
     extends Simulator.GuessModels.InitialGuess;
   equation
-//connector equation
+  //connector equation
     if Bin then
       In.P = Pdmy1;
-//this is adjustment done since OpenModelica 1.11 is not handling array modification properly
+  //this is adjustment done since OpenModelica 1.11 is not handling array modification properly
       In.T = Tdmy1;
       In.x_pc = xdmy1_pc;
       In.F = Fdmy1;
@@ -182,7 +186,7 @@ extends Modelica.Icons.Package;
       In_Dmy.S = Sdmy1;
       In_Dmy.xvap = xvapdmy1;
     end if;
-//this is adjustment done since OpenModelica 1.11 is not handling array modification properly
+  //this is adjustment done since OpenModelica 1.11 is not handling array modification properly
     xdmy1_pc[1, :] = xin_c[:];
     Hdmy1 = Hin;
     Fdmy1 = Fin;
@@ -204,7 +208,7 @@ extends Modelica.Icons.Package;
     Out_Vap.x_c[:] = xvap_sc[2, :];
     En.Q = Q;
     
-// Adjustment to find the molecular weight
+  // Adjustment to find the molecular weight
     x_pc[1, :] = (Fout .* xout_c[:] + Fvap_s[2] .* xvap_sc[2, :] + Fliq_s[2] .* xliq_sc[2, :]) / (Fliq_s[2] + Fvap_s[2] + Fout);
      x_pc[2, :] = xliq_sc[2,:];
      x_pc[3, :] = xvap_sc[2,:];
@@ -214,7 +218,7 @@ extends Modelica.Icons.Package;
       muL[i] = Simulator.Files.TransportProperties.LiqVis(C[i].LiqVis, T);
       muV[i] = Simulator.Files.TransportProperties.VapVisc(C[i].VapVis, T);
       rholiq_c[i] = Simulator.Files.ThermodynamicFunctions.Dens(C[i].LiqDen, C[i].Tc, T, P);
-      rhovap_c[i] = P * MW_p[i] / (8.314 * T) ;
+      rhovap_c[i] = P * C[i].MW / (8.314 * T) ;
     end for;
     
   //Mixture Density and Viscosity
@@ -222,56 +226,59 @@ extends Modelica.Icons.Package;
     muvap = sum(muV .* xvap_sc[2, :]) ;
     rholiq = sum(rholiq_c .* xliq_sc[2, :]) * MW_p[2] * 1e-03;
     rhovap = sum(rhovap_c .* xvap_sc[2, :]) * 1e-03 ;
-//Calculation of Reynolds and Schmit Numbers
-    ReL =  dp * rholiq * vl / muliq ;
+    
+  //Calculation of Reynolds and Schmid Numbers
+    ReL =  dp * rholiq * vl / (muliq * (1 - epslon)) ;
     ScL =  muliq / (rholiq * DL) ;
-    ReV =  dp * rhovap * vv / muvap ;
+    ReV =  dp * rhovap * vv / (muvap * (1 - epslon)) ;
     ScV =  muvap / (rhovap * DV) ;
+  //Specific and effective area of packing
+    ap = 6 * (1 - epslon) / dp ;
+    ae / ap = (1 - exp((-1.45 * (rholiq * vl / (ap * muliq))^0.1 * (vl^2 * ap / 9.81)^(-0.05) * (rholiq * vl^2 / (ap * sigma))^0.2)));
     
   //Correlation to find Mass Transfer coefficients
-    ((KL * dp) / DL) = 25.1 * (ReL)^0.45 * (ScL)^0.5 ;
-    ((KV * dp) / DV) = 1.2 * (1 - epslon)^0.36 * (ReV) * (ScV)^0.33;
+    if Corrln == "Onda" then
+     KL = (0.0051 / (ap * dp)^(-0.4)) * (muliq * 9.81 / rholiq)^0.33 * (rholiq * vl / (ap * muliq))^0.66 * ScL^(-0.5);
+     KV = 2 * (DV / (ap * dp^2)) * (rhovap * vv / (ap * muvap))^0.7 * ScV^0.33;
+   elseif Corrln == "Shulman" then
+     KL = (DL / dp) * 25.1 * (ReL)^0.45 * (ScL)^0.5 ;
+     KV = 1.195 * vv * (ReV)^(-0.36) * (ScV)^(-0.66);
+   end if;
+  //Finding the velocities
+    Fliq_s[1] = sum(rholiq_c .* xliq_sc[1, :]) * vl * (3.14 / 4) * dsec ^ 2;
+    Fvap_s[1] = (rhovap * 1e3 / MW_p[3]) * vv * (3.14 / 4) * dsec ^ 2;
     
-//Finding the velocities
-    Fliq_s[1] = sum(rholiq_c .* xliq_sc[1, :]) * vl * (3.14 / 4) * dD ^ 2;
-    Fvap_s[1] = (sum(P .* xvap_sc[1, :]) / (8.314 * T)) * vv * (3.14/4) * dD^2 ;
-    
-//Molar Balance
-    NL = NV;
-    Fliq_s[1] - Fliq_s[2] = - NL * a;
-    Fvap_s[1] - Fvap_s[2] =  NV * a;
-    
-  // Component Balance
-  for i in 1:Nc - 1 loop
+  //Molar Component Balance
+  for i in 1:Nc loop
     Nliq[i] = Nvap[i];
   //Liquid Flux
-    Fliq_s[1] * xliq_sc[1, i] - Fliq_s[2] * xliq_sc[2, i] = - Nliq[i] * a;
+    Fin * xin_c[i] + Fliq_s[1] * xliq_sc[1, i] - Fliq_s[2] * xliq_sc[2, i] = - Nliq[i] * (3.14/4) * dsec^2 * z * ap;
   //Vapour Flux
-    Fvap_s[1] * xvap_sc[1, i] - Fvap_s[2] * xvap_sc[2, i] =   Nvap[i] * a;
+    Fvap_s[1] * xvap_sc[1, i] - Fvap_s[2] * xvap_sc[2, i] =  Nvap[i] * (3.14/4) * dsec^2 * z * ap;
   end for;
   
   //Flux Equations
-    Nliq = KL * (xI[:] - xliq_sc[2, :]) + xliq_sc[2, :] * NL;
-    Nvap = KV * (xvap_sc[2, :] - yI[:]) + xvap_sc[2, :] * NV;
+    Nliq =   KL * (xI[:] - xliq_sc[2, :]) * (rholiq * 1e3 / MW_p[2])  + xliq_sc[2, :] * NL;
+    Nvap =   KV * (xvap_sc[2, :] - yI[:]) * (rhovap * 1e3 / MW_p[3]) + xvap_sc[2, :] * NV;
     
-//Equillibrium
+  //Equillibrium
     yI = K_c[:] .* xI;
-//summation equation
+  //summation equation
     sum(xliq_sc[2, :]) = 1;
     sum(xvap_sc[2, :]) = 1;
     sum(yI) = 1;
     sum(xI) = 1;
     
-// Enthalpy balance
+  // Enthalpy balance
     Fin * Hin + Fvap_s[1] * Hvap_s[1] + Fliq_s[1] * Hliq_s[1] = Fout * Hout + Fvap_s[2] * Hvap_s[2] + Fliq_s[2] * Hliq_s[2] + Q;
-//enthalpy calculation
+  //enthalpy calculation
     for i in 1:Nc loop
       Hliqout_c[i] = ThermodynamicFunctions.HLiqId(C[i].SH, C[i].VapCp, C[i].HOV, C[i].Tc, T);
       Hvapout_c[i] = ThermodynamicFunctions.HVapId(C[i].SH, C[i].VapCp, C[i].HOV, C[i].Tc, T);
     end for;
     Hliq_s[2] = sum(xliq_sc[2, :] .* Hliqout_c[:]) + Hres_p[2];
     Hvap_s[2] = sum(xvap_sc[2, :] .* Hvapout_c[:]) + Hres_p[3];
-//sidedraw calculation
+  //sidedraw calculation
     if OutType == "L" then
       xout_c[:] = xliq_sc[2, :];
     elseif OutType == "V" then
@@ -287,7 +294,7 @@ extends Modelica.Icons.Package;
       Diagram(coordinateSystem(extent = {{-100, -40}, {100, 40}})),
       Icon(coordinateSystem(extent = {{-100, -40}, {100, 40}})),
       __OpenModelica_commandLineOptions = "");
-  end DistTray;
+  end PackingSection;
 
   model Reb "Model of a reboiler used in distillation column"
     import Simulator.Files.*;
@@ -403,6 +410,22 @@ extends Modelica.Icons.Package;
       Dialog(tab = "Column Specifications", group = "Calculation Parameters"));
     parameter String Ctype = "Total" "Condenser type: Total or Partial" annotation(
       Dialog(tab = "Column Specifications", group = "Calculation Parameters"));
+    parameter String Corrln = "Onda" "Packing Correlation Shulman or Onda" annotation(
+      Dialog(tab = "Column Specifications", group = "Calculation Parameters"));
+    parameter Real DL = 5.6e-09 "Liquid Diffusivity" annotation(
+      Dialog(tab = "Column Specifications", group = "Calculation Parameters"));
+    parameter Real DV = 4.5e-06 "Vapour Diffusivity"annotation(
+      Dialog(tab = "Column Specifications", group = "Calculation Parameters"));
+    parameter Real sigma = 20e-03 "Liquid Surface Tension"annotation(
+      Dialog(tab = "Column Specifications", group = "Calculation Parameters"));
+    parameter Real z = 4 "Height of Packing"annotation(
+      Dialog(tab = "Column Specifications", group = "Calculation Parameters"));
+    parameter Real dsec(unit = "m") = 1 "Diameter of the packing section"annotation(
+      Dialog(tab = "Column Specifications", group = "Calculation Parameters"));
+    parameter Real dp(unit = "m") = 13e-03 "Diameter of Raschig Ring packing" annotation(
+      Dialog(tab = "Column Specifications", group = "Calculation Parameters"));
+    parameter Real epslon = 0.64 "Voidage"annotation(
+      Dialog(tab = "Column Specifications", group = "Calculation Parameters"));
     Real RR(min = 0);
     Simulator.Files.Interfaces.matConn In_s[Ni](each Nc = Nc) annotation(
       Placement(visible = true, transformation(origin = {-248, -40}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {-250, 0}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
@@ -425,7 +448,7 @@ extends Modelica.Icons.Package;
       elseif InT_s[i] == Nt then
         connect(In_s[i], reboiler.In);
       elseif InT_s[i] > 1 and InT_s[i] < Nt then
-//this is adjustment done since OpenModelica 1.11 is not handling array modification properly
+  //this is adjustment done since OpenModelica 1.11 is not handling array modification properly
         In_s[i].P = tray[InT_s[i] - 1].Pdmy1;
         In_s[i].T = tray[InT_s[i] - 1].Tdmy1;
         In_s[i].F = tray[InT_s[i] - 1].Fdmy1;
@@ -439,16 +462,16 @@ extends Modelica.Icons.Package;
     connect(reboiler.Out, Bot);
     connect(condenser.En, Cduty);
     connect(reboiler.En, Rduty);
-    for i in 1:Nt - 3 loop
-      connect(tray[i].Out_Liq, tray[i + 1].In_Liq);
-      connect(tray[i].In_Vap, tray[i + 1].Out_Vap);
+    for i in 1:Nt-3 loop
+      connect(tray[i].Out_Liq, tray[i+1].In_Liq);
+      connect(tray[i].In_Vap, tray[i+1].Out_Vap);
     end for;
     connect(tray[1].Out_Vap, condenser.In_Vap);
     connect(condenser.Out_Liq, tray[1].In_Liq);
-    connect(tray[Nt - 2].Out_Liq, reboiler.In_Liq);
-    connect(reboiler.Out_Vap, tray[Nt - 2].In_Vap);
-//tray pressures
-    for i in 1:Nt - 2 loop
+    connect(tray[Nt-2].Out_Liq, reboiler.In_Liq);
+    connect(reboiler.Out_Vap, tray[Nt-2].In_Vap);
+  //tray pressures
+    for i in 1:Nt-2 loop
       tray[i].P = condenser.P + i * (reboiler.P - condenser.P) / (Nt - 1);
     end for;
     for i in 2:Nt - 1 loop

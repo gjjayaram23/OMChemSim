@@ -10,12 +10,12 @@ extends Modelica.Icons.ExamplesPackage;
       Documentation(info = "<html><head></head><body><span style=\"font-size: 12px;\">This is a non-executable model is created inside the package Distillation to extend the&nbsp;</span><a href=\"modelica://Simulator.UnitOperations.DistillationColumn.Cond\">Condenser</a><span style=\"font-size: 12px;\">&nbsp;model along with the necessary property method from&nbsp;</span>ThermodynamicPackages<span style=\"font-size: 12px;\">&nbsp;which is&nbsp;</span><a href=\"modelica://Simulator.Files.ThermodynamicPackages.RaoultsLaw\">RaoultsLaw</a><span style=\"font-size: 12px;\">&nbsp;in this case.</span><div><span style=\"font-size: 12px;\"><br></span></div><div>It will be instantiated in the&nbsp;<a href=\"modelica://Simulator.Examples.Distillation.DistColumn\">DistColumn</a>&nbsp;model to create a complete distillation column model which will be instantiated in an executable model.</div></body></html>"));
   end Condenser;
 
-  model Tray
-    extends Simulator.UnitOperations.PackedColumn.DistTray;
+  model Packing
+    extends Simulator.UnitOperations.PackedColumn.PackingSection;
     extends Simulator.Files.ThermodynamicPackages.RaoultsLaw;
     annotation(
       Documentation(info = "<html><head></head><body><span style=\"font-size: 12px;\">This is a non-executable model is created inside the package Distillation to extend the&nbsp;</span><a href=\"modelica://Simulator.UnitOperations.DistillationColumn.DistTray\">Tray</a><span style=\"font-size: 12px;\">&nbsp;model along with the necessary property method from&nbsp;</span>ThermodynamicPackages<span style=\"font-size: 12px;\">&nbsp;which is&nbsp;</span><a href=\"modelica://Simulator.Files.ThermodynamicPackages.RaoultsLaw\">RaoultsLaw</a><span style=\"font-size: 12px;\">&nbsp;in this case.</span><div><span style=\"font-size: 12px;\"><br></span></div><div>It will be instantiated in the&nbsp;<a href=\"modelica://Simulator.Examples.Distillation.DistColumn\">DistColumn</a>&nbsp;model to create a complete distillation column model which will be instantiated in an executable model.</div></body></html>"));
-  end Tray;
+  end Packing;
 
   model Reboiler
     extends Simulator.UnitOperations.PackedColumn.Reb;
@@ -28,7 +28,7 @@ extends Modelica.Icons.ExamplesPackage;
     extends Simulator.UnitOperations.PackedColumn.DistCol;
     Condenser condenser(Nc = Nc, C = C, Ctype = Ctype, Bin = Bin_t[1]);
     Reboiler reboiler(Nc = Nc, C = C, Bin = Bin_t[Nt]);
-    Tray tray[Nt - 2](each Nc = Nc, each C = C, Bin = Bin_t[2:Nt - 1]);
+    Packing tray[Nt - 2](each Nc = Nc, each C = C, Bin = Bin_t[2:Nt - 1], Corrln = Corrln);
     annotation(
       Documentation(info = "<html><head></head><body><span style=\"font-size: 12px;\">This is a non-executable model is created inside the package Distillation to extend the&nbsp;</span><a href=\"modelica://Simulator.UnitOperations.DistillationColumn.DistCol\">Distillation Column</a><span style=\"font-size: 12px;\">&nbsp;model along with the necessary property method from&nbsp;</span>ThermodynamicPackages<span style=\"font-size: 12px;\">&nbsp;which is&nbsp;</span><a href=\"modelica://Simulator.Files.ThermodynamicPackages.RaoultsLaw\">RaoultsLaw</a><span style=\"font-size: 12px;\">&nbsp;in this case.</span><div><br></div><div>Condenser, Tray and Reboiler instances are also instantiated in this model to complete building of distillation column model.<br><div><span style=\"font-size: 12px;\"><br></span></div><div>It will be instantiated in the&nbsp;<a href=\"modelica://Simulator.Examples.Distillation.Test\">Test</a>,&nbsp;<a href=\"modelica://Simulator.Examples.Distillation.Test2\">Test2</a>,&nbsp;<a href=\"modelica://Simulator.Examples.Distillation.Test3\">Test3</a>,<a href=\"modelica://Simulator.Examples.Distillation.Test4\">Test4</a>,&nbsp;<a href=\"modelica://Simulator.Examples.Distillation.multiFeedTest\">multiFeedTest</a>&nbsp;model to create the required instance of the distillation column model.</div></div></body></html>"));
   end DistColumn;
