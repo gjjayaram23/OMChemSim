@@ -8,8 +8,8 @@ model CSTR
     Dialog(tab = "Reactor Specifications", group = "Component Parameters"));
   import Simulator.Files.*;
   import Simulator.Files.ThermodynamicFunctions.*;
-  extends Simulator.Files.ThermodynamicPackages.RaoultsLaw;
   extends Simulator.Files.Icons.CSTR;
+  extends Simulator.GuessModels.InitialGuess;
   parameter String Mode "Required mode of operation: Isothermal, Define_Out_Temperature, Adiabatic" annotation(
     Dialog(tab = "Reactor Specifications", group = "Calculation Parameters"));
   parameter Integer Nc "Number of Components" annotation(
@@ -18,57 +18,57 @@ model CSTR
     Dialog(tab = "Reactor Specifications", group = "Calculation Parameters"));
   parameter Real Tdef(unit = "K") "Define outlet Temperature , applicable if Define_Out_Temperature mode is chosen" annotation(
     Dialog(tab = "Reactor Specifications", group = "Calculation Parameters"));
-  parameter Real Phase "Reaction Phase: 1-Mixture, 2-Liquid, 3-Vapour" annotation(Dialog(tab = "Reactions", group = "Kinetic Reaction Parameters"));
-  parameter Real VHspace(unit = "m^3") = 0 "Reactor Headspace" annotation(
-    Dialog(tab = "Reactor Specifications", group = "Calculation Parameters"));
+  parameter String Phase "Reaction Phase: Mixture, Liquid, Vapour" annotation(
+    Dialog(tab = "Reactions", group = "Kinetic Reaction Parameters"));
   parameter Real V(unit = "m^3") "Reactor Volume" annotation(
     Dialog(tab = "Reactor Specifications", group = "Calculation Parameters"));
   parameter Boolean Dynamics "To operate the reactor in unsteady mode" annotation(
     Dialog(tab = "Reactor Specifications"));
-  parameter Real A(unit = "m^2") = 0.5 "Area of the Reactor" annotation(
+  parameter Real A(unit = "m^2") = 1 "Area of the Reactor" annotation(
     Dialog(tab = "Physical Specifications", group = "Vessel Geometry"));
-  parameter Real Cdl(unit = "-") = 25 "Discharge coefficient of valve" annotation(
+  parameter Real Cdl(unit = "-") = 0.5 "Discharge coefficient of valve" annotation(
     Dialog(tab = "Physical Specifications", group = "Vessel Geometry"));
   parameter Real Cdv(unit = "-") = 0.5;
-  parameter Real xtv(fixed = false) "Stem Position of the valve";
+  parameter Real xtl(fixed = false), xtv(fixed = false) "Stem Position of the valve";
   parameter Real Pset = 101325 "Initial Pressure" annotation(
     Dialog(tab = "Physical Specifications", group = "Vessel Geometry")); 
-  //===============================================================================
-  //Model Variables
-  Real Pin(unit = "Pa") "Inlet Pressure";
-  Real Tin(unit = "K") "Inlet Temperature";
-  Real Pout(unit = "Pa") "Outlet Pressure";
-  Real Tout(unit = "K") "Outlet Temperature";
-  Real Hin(unit = "kJ/kmol") "Mixture Mol Enthalpy in the inlet";
-  Real Hout(unit = "kJ/kmol") "Mixture Mol Enthalpy in the outlet";
+//===============================================================================
+//Model Variables
+  Real Pin(unit = "Pa", start = Pg) "Inlet Pressure";
+  Real Tin(unit = "K", start = Tg) "Inlet Temperature";
+  Real Pout(unit = "Pa", start = Pg) "Outlet Pressure";
+  Real Tout(unit = "K", start = Tg) "Outlet Temperature";
+  Real Hin(unit = "kJ/kmol", start = Htotg) "Mixture Mol Enthalpy in the inlet";
+  Real Hout(unit = "kJ/kmol", start = Htotg) "Mixture Mol Enthalpy in the outlet";
   Real Fin(unit = "mol/s") "Inlet total mole flow";
-  Real Fout_p[3](each unit = "mol/s") "Outlet total mole flow";
-  Real Fout_pc[3, Nc](each unit = "mol/s") "Component mole flow at outlet";
+  Real Fout_p[3](each unit = "mol/s", start={Fg,Fliqg,Fvapg}) "Outlet total mole flow";
+  Real Fout_pc[3, Nc](each unit = "mol/s", each start = Fg) "Component mole flow at outlet";
   Real xin_pc[1, Nc](each unit = "-") "Component mole fraction at inlet";
-  Real xout_pc[3, Nc](each unit = "-") "Component mol-frac at outlet";
+  Real xout_pc[3, Nc](each unit = "-", start = {xguess,xg,yg}) "Component mol-frac at outlet";
   Real Q(unit = "W") "Energy supplied/removed";
   Real Hr(unit = "kJ/kmol") "Heat of Reaction";
   Real C_c[Nc](each unit = "mol/m^3") "Concentration of Component";
   Real rholiq_c[Nc](each unit = "mol/m^3");
   Real rholiq(unit = "mol/m^3");
   Real Fvout_p[3](each unit = "m^3/s") "Mixture Volumetric Flow rate";
-  Real FO_cr[Nc, Nr](each unit = "mol/s") "Inlet Flow";
-  Real F_cr[Nc, Nr](each unit = "mol/s") "Outlet Flow";
-  Real X(unit = "-") "Conversion of Base componet";
+  Real FO_c[Nc](each unit = "mol/s") "Inlet Flow";
+  Real F_c[Nc](each unit = "mol/s") "Outlet Flow";
+  Real X(unit = "-") "Conversion of Base component";
   Real k_r[Nr] "Rate constant";
-  Real r_r[Nr](each unit = "mol/m^3.S") "Rate of Reaction";
-  Real Pbubl(unit = "Pa") "Bubble Point Pressure";
-  Real Pdew(unit = "Pa") "Dew Point Pressure";
-  Real xvap(unit = "-") "Vapor Phase Mole Fraction";
-  Real T(unit = "K");
-  Real P(unit = "Pa");
+  Real r_rc[Nc, Nr](each unit = "mol/m^3.S") "Rate of Reaction";
+  Real r_c[Nc](each unit = "mol/m^3.S") "Overall Rate of Reaction";
+  Real xvap(unit = "-", start = xvapg) "Vapor Phase Mole Fraction";
+  Real Vliq(unit = "m^3") "Volume of Liquid in Reactor";
+  Real Vvap(unit = "m^3") "Volume of Liquid in Reactor";
+  Real tau(unit = "s") "Residence Time";
+  Real Vrxn(start = V) "Actual Reaction Volume";
   Real M[Nc](each unit = "mol", each start = 2000) "Component Molar Holdup";
   Real MT(unit = "mol") "Total Holdup";
   Real ML(unit = "mol") "Liquid Holdup", MV(unit = "mol") "Vapour Holdup";
   Real VL(unit = "m^3") "Volume of Liquid holdup";
   Real VG(unit = "m^3") "Volume of Vapour holdup";
   Real h(unit = "m", start = 0.25) "Height of liquid holdup";
-  Real Pt(unit = "Pa") "Total Reactor Pressure";
+  Real Pt(unit = "Pa") "Total Reactor Pressure", P(start = Pset);
   //===============================================================================
   //Instatiation of Connectors
   Simulator.Files.Interfaces.matConn In(Nc = Nc) annotation(
@@ -78,16 +78,18 @@ model CSTR
   Simulator.Files.Interfaces.enConn En annotation(
     Placement(visible = true, transformation(origin = {0, -44}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {0, -142}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   extends Simulator.Files.Models.ReactionManager.KineticReaction(Nr = 1, BC_r = {1}, Coef_cr = {{-1}, {-1}, {1}}, DO_cr = {{1}, {0}, {0}}, Af_r = {0.5}, Ef_r = {0});
-
+  
   initial equation
   P = Pset;
+  h = 0.3;
   if Dynamics == true then
   for i in 1:Nc loop
   der(M[i]) = 0 ;
   end for;
   end if;
+  
   equation
-//===============================================================================
+//===============================================================================  
 //Connector-Equations
   In.P = Pin;
   In.T = Tin;
@@ -98,51 +100,19 @@ model CSTR
   Out.T = Tout;
   Out.F = Fout_p[1];
   Out.H = Hout;
-  Out.x_pc[1, :] = xout_pc[1, :];
+  Out.x_pc[:, :] = xout_pc[:, :];
+  Out.xvap = xvap;
   En.Q = Q;
 //===============================================================================
-//Flash of Outlet Stream
-  T = Tout;
-    Pbubl = sum(gmabubl_c[:] .* xout_pc[1, :] .* exp(C[:].VP[2] + C[:].VP[3] / T + C[:].VP[4] * log(T) + C[:].VP[5] .* T .^ C[:].VP[6]) ./ philiqbubl_c[:]);
-  Pdew = 1 / sum(xout_pc[1, :] ./ (gmadew_c[:] .* exp(C[:].VP[2] + C[:].VP[3] / T + C[:].VP[4] * log(T) + C[:].VP[5] .* T .^ C[:].VP[6])) .* phivapdew_c[:]);
-//===============================================================================
-//Below bubble point region
-  if Pout >= Pbubl then
-    xout_pc[3, :] = zeros(Nc);
-    Fout_p[3] = 0;
-    xout_pc[2, :] = xout_pc[1, :];
-//===============================================================================
-//Above dew point region
-  elseif Pout <= Pdew then
-    xout_pc[2, :] = zeros(Nc);
-    Fout_p[2] = 0;
-    xout_pc[3, :] = xout_pc[1, :];
-  else
-//===============================================================================
-//VLE region
-    if Phase == 1 or Phase == 3 then
-      for i in 1:Nc loop
-        xout_pc[3, i] = K_c[i] * xout_pc[2, i];
-        xout_pc[2, i] = xout_pc[1, i] ./ (1 + xvap * (K_c[i] - 1));
-      end for;
-    elseif Phase == 2 then
-      for i in 1:Nc loop
-        xout_pc[2, i] = xout_pc[1, i] ./ (1 + xvap * (K_c[i] - 1));
-        xout_pc[1, i] * Fout_p[1] = xout_pc[2, i] * Fout_p[2] + xout_pc[3, i] * Fout_p[3];
-      end for;
-    end if;
-    sum(xout_pc[2, :]) - sum(xout_pc[3, :]) = 0;
-  end if;
-//===============================================================================
 //Mole Balance
-  FO_cr[:, 1] = xin_pc[1, :] * Fin;
+  FO_c[:] = xin_pc[1, :] * Fin;
+ for i in 1:Nc loop
+    FO_c[i] - F_c[i] + r_c[i] * Vrxn  = if Dynamics == true then der(M[i]) else 0;
+ end for;
+  X = (FO_c[BC_r[1]] - F_c[BC_r[1]]) / FO_c[BC_r[1]] ;
+  sum(F_c[:]) = Fout_p[1];
   for i in 1:Nc loop
-    FO_cr[i, 1] - F_cr[i, 1] + Coef_cr[i, 1] * r_r[1] * V / abs(Coef_cr[BC_r[Nr], 1]) = if Dynamics == true then der(M[i]) else 0;
-  end for;
-  V = (FO_cr[BC_r[1], 1] * X) / r_r[1] ;
-  sum(F_cr[:, 1]) = Fout_p[1];
-  for i in 1:Nc loop
-    xout_pc[1, i] = F_cr[i, Nr] / Fout_p[1];
+    xout_pc[1, i] = F_c[i] / Fout_p[1];
     Fout_pc[:, i] = Fout_p[:] .* xout_pc[:, i];
   end for;
   Fout_p[1] = Fout_p[2] + Fout_p[3];
@@ -152,7 +122,7 @@ model CSTR
 //Holdup Calculations and Valve equation  
   M = MT .* xout_pc[1, :] ;
   ML = rholiq * VL ;
-  MV = (P * VG) / (8.314 * T) ;
+  MV = (P * VG) / (8.314 * Tout) ;
   VL = A * h;
   VG = V - VL ;
   MT = ML + MV;
@@ -160,31 +130,46 @@ model CSTR
   if xvap >= 1 then
   h = 0;
   else
-  Fout_p[2] = Cdl * sqrt(2*9.81*h);
+  Fout_p[2] = xtl * Cdl * sqrt(Pt - 1e5);
   end if;
+  if xvap <= 0 then
+  P = 101325;
+  else
   Fout_p[3] = xtv * Cdv * sqrt(P - 1e5);
+  end if;
 //===============================================================================
 //Calculation of Mixer Density and Volumetric Flowrate
   for i in 1:Nc loop
-    rholiq_c[i] = Simulator.Files.ThermodynamicFunctions.Dens(C[i].LiqDen, C[i].Tc, Tout, Pout);
+    rholiq_c[i] = Simulator.Files.ThermodynamicFunctions.Dens(C[i].LiqDen, C[i].Tc, Tout, P);
   end for;
-rholiq = 1 / sum(xout_pc[2, :] ./ rholiq_c[:]);
-Fvout_p[1] = Fvout_p[2] + Fvout_p[3];
-Fvout_p[2] = Fout_p[2] / rholiq;
-Fvout_p[3] = (Fout_p[3] * 8.314 * Tout) / Pout;
+  rholiq = 1 / sum(xout_pc[2, :] ./ rholiq_c[:]);
+  Fvout_p[1] = Fvout_p[2] + Fvout_p[3];
+  Fvout_p[2] = Fout_p[2] / rholiq;
+  Fvout_p[3] = Fout_p[3] * 8.314 * Tout / Pout;
 //===============================================================================
-//Volume of Reaction
-  if Phase == 1 then
+//Volume of Reaction Mixture
+  tau = V / Fvout_p[1] ;
+  tau = Vliq / Fvout_p[2] ;
+  tau = Vvap / Fvout_p[3] ;
+//===============================================================================
+//Concentration of the Components
+  if Phase == "Mixture" then
     C_c[:] = Fout_pc[1, :] ./ Fvout_p[1];
-  elseif Phase == 2 then
+    Vrxn = V;
+  elseif Phase == "Liquid" then
     C_c[:] = Fout_pc[2, :] ./ Fvout_p[2];
-  elseif Phase == 3 then
-    C_c[:] = P .* xout_pc[3, :] / (8.314 * T);
+    Vrxn = Vliq;
+  elseif Phase == "Vapour" then
+    C_c[:] = P .* xout_pc[3, :] / (8.314 * Tout);
+    Vrxn = Vvap;
   end if;
 //===============================================================================
 //Rate Equation
   for i in 1:Nr loop
-    r_r[i] = k_r[i] * product(C_c[:] .^ DO_cr[:, i]);
+    r_rc[:, i] = (Coef_cr[:, i] / abs(Coef_cr[BC_r[i], i])) * k_r[i] * product(C_c[:] .^ DO_cr[:, i]);
+  end for;
+  for i in 1:Nc loop
+    r_c[i] = sum(r_rc[i, :]);
   end for;
   Pout = Pin - Pdel;
 //===============================================================================
@@ -192,20 +177,20 @@ Fvout_p[3] = (Fout_p[3] * 8.314 * Tout) / Pout;
 //===============================================================================
 //Isothermal Operation
   if Mode == "Isothermal" then
-    Hr = Hr_r[1] * FO_cr[BC_r[Nr], Nr] .* X;
+    Hr = Hr_r[1] * FO_c[BC_r[Nr]] .* X;
     Fin * Hin - Fout_p[1] * Hout + Q - Hr = 0;
     Tin = Tout;
 //===============================================================================
 //Outlet Temperature Defined
   elseif Mode == "Define_Out_Temperature" then
     Tout = Tdef;
-    Hr = Hr_r[1] * FO_cr[BC_r[Nr], Nr] .* X;
+    Hr = Hr_r[1] * FO_c[BC_r[Nr]] .* X;
     Fin * Hin - Fout_p[1] * Hout + Q - Hr = 0;
 //===============================================================================
 //Adiabatic Operation
   elseif Mode == "Adiabatic" then
     Q = 0;
-    Hr = Hr_r[1] * FO_cr[BC_r[Nr], Nr] .* X;
+    Hr = Hr_r[1] * FO_c[BC_r[Nr]] .* X;
     Fin * Hin + Q = Fout_p[1] * Hout + Hr;
   end if;
 //===============================================================================
