@@ -17,3 +17,4 @@ DistillationColumn
 AbsorptionColumn
 RecycleBlock
 CSTR
+BatchDistillation
